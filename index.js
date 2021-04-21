@@ -1,6 +1,7 @@
 const express = require('express');
 const exphbs  = require('express-handlebars');
 const fetch = require('node-fetch');
+const fs = require('fs');
 
 const app = express();
 
@@ -13,12 +14,36 @@ app.get('/', (req, res) => {
             "https://api.giphy.com/v1/gifs/search?api_key=RowCuvnkiP1yew6ix6ogw7ckHTUOJMwS&q=cheese&limit=25&offset=0&lang=en"
         );
         let response = await images.json();
-        console.log(response);
+        let sorted_data = response["data"].sort(function (a, b) {
+            return a.rating.localeCompare(b.rating);
+        });
+        saveDataToFile(sorted_data, function(err) {
+            if (err) {
+                throw err;
+            }
+            console.log("JSON data is saved.");
+        });
     }
 
     getImages();
-    res.render('home');
+
+    readFile('./images.json', (err, data) => {
+        if (err) {
+            throw err;
+        }
+        const gifs = JSON.parse(data);
+        res.render('home', {gifs: gifs});
+    });
 });
+
+function saveDataToFile(data, callback) {
+    first_ten_elements = data.slice(0,10)
+    fs.writeFile('./images.json', JSON.stringify(first_ten_elements, null, 2), callback);
+}
+
+function readFile(path, callback) {
+    fs.readFile(path, 'utf-8', callback);
+}
 
 const PORT = process.env.PORT || 5000;
 
